@@ -236,10 +236,17 @@ def run_forecast(city_name, _df):
     city_data = city_data.sort_values('Date').reset_index(drop=True)
 
     # Clean data — exact from model.py
-    city_data['AQI'] = city_data['AQI'].fillna(method='ffill').fillna(method='bfill')
-    city_data['AQI'] = city_data['AQI'].interpolate(method='linear')
-    city_data = city_data.dropna(subset=['AQI']).reset_index(drop=True)
+    # Convert AQI to numeric
+    city_data["AQI"] = pd.to_numeric(city_data["AQI"], errors="coerce")
 
+    # Fill missing values (Pandas 3 compatible)
+    city_data["AQI"] = city_data["AQI"].ffill().bfill()
+
+    # Linear interpolation
+    city_data["AQI"] = city_data["AQI"].interpolate()
+
+    # Remove remaining missing values
+    city_data = city_data.dropna(subset=["AQI"]).reset_index(drop=True)
     # Remove outliers beacuse it makes the model skewed — exact from model.py
     Q1 = city_data['AQI'].quantile(0.25)
     Q3 = city_data['AQI'].quantile(0.75)
